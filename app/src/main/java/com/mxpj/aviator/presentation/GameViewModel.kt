@@ -30,6 +30,7 @@ class GameViewModel: ViewModel() {
     private val enemyLogic = HashMap<Int, Job>()
 
     init {
+        _player.value = PlayerPlane(position = Pair(0,0))
         val scope = CoroutineScope(Dispatchers.IO)
         val enemyPlane = EnemyPlane(position = Pair(500,-200))
         _enemies.value = _enemies.value!!.apply {
@@ -100,6 +101,12 @@ class GameViewModel: ViewModel() {
             position = position.copy(
                 first = (position.first + translationX)
             )
+        )
+    }
+
+    fun setPlayerPlanePosition(positionX: Float, positionY: Float) {
+        _player.value = _player.value!!.copy(
+            position = Pair(positionX.toInt(), positionY.toInt())
         )
     }
 }

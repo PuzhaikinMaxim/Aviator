@@ -24,7 +24,9 @@ class GameActivity : AppCompatActivity() {
 
     private lateinit var viewModel: GameViewModel
 
-    private val planeHolders = ArrayList<PlaneHolder>()
+    private val enemyPlaneHolders = ArrayList<EnemyPlaneHolder>()
+
+    private var playerPlaneView: ImageView? = null
 
     private val bulletHolders = ArrayList<BulletHolder>()
 
@@ -36,6 +38,7 @@ class GameActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this, ViewModelFactory())[GameViewModel::class.java]
         setEnemyShipsObserver()
         setBulletsObserver()
+        setPlayerObserver()
     }
 
     private fun setEnemyShipsObserver() {
@@ -43,11 +46,11 @@ class GameActivity : AppCompatActivity() {
         windowManager.defaultDisplay.getMetrics(displayMetrics)
         viewModel.enemies.observe(this){
             for(plane in it){
-                if(planeHolders.find { planeHolder -> planeHolder.plane.id == plane.id } != null) continue
+                if(enemyPlaneHolders.find { planeHolder -> planeHolder.plane.id == plane.id } != null) continue
                 val ivPlane = ImageView(this)
                 ivPlane.setImageResource(R.drawable.plane_enemy)
                 ivPlane.layoutParams = ViewGroup.LayoutParams(160,160)
-                planeHolders.add(PlaneHolder(plane, ivPlane))
+                enemyPlaneHolders.add(EnemyPlaneHolder(plane, ivPlane))
                 @Suppress("DEPRECATION")
                 val animator = ValueAnimator.ofFloat(-200f, displayMetrics.heightPixels.toFloat()).setDuration(10000L).apply {
                     interpolator = LinearInterpolator()
@@ -66,7 +69,7 @@ class GameActivity : AppCompatActivity() {
                     override fun onAnimationEnd(p0: Animator) {
                         binding.clTest.removeView(ivPlane)
                         viewModel.removeEnemyPlane(plane)
-                        planeHolders.removeIf { planeHolder -> planeHolder.plane.id == plane.id }
+                        enemyPlaneHolders.removeIf { planeHolder -> planeHolder.plane.id == plane.id }
                     }
 
                     override fun onAnimationCancel(p0: Animator) {
@@ -83,7 +86,7 @@ class GameActivity : AppCompatActivity() {
                 ivPlane.x = plane.position.first.toFloat()
                 ivPlane.y = plane.position.second.toFloat()
                 binding.clTest.addView(ivPlane)
-                planeHolders.add(PlaneHolder(plane, ivPlane))
+                enemyPlaneHolders.add(EnemyPlaneHolder(plane, ivPlane))
             }
         }
     }
@@ -158,6 +161,39 @@ class GameActivity : AppCompatActivity() {
         }
     }
 
+    private fun setPlayerObserver() {
+        viewModel.player.observe(this) {
+            if(playerPlaneView == null){
+                inflatePlayerPlaneView()
+            }
+            playerPlaneView!!.x = it.position.first.toFloat()
+        }
+    }
+
+    private fun inflatePlayerPlaneView() {
+        playerPlaneView = ImageView(this)
+        playerPlaneView!!.setImageResource(R.drawable.plane)
+        playerPlaneView!!.x = getDisplayWidth() / 2
+        playerPlaneView!!.y = getDisplayHeight() - 400
+        viewModel.setPlayerPlanePosition(getDisplayWidth() / 2, getDisplayHeight() - 400)
+        playerPlaneView!!.layoutParams = ViewGroup.LayoutParams(160,160)
+        binding.clTest.addView(playerPlaneView)
+    }
+
+    private fun getDisplayHeight(): Float {
+        @Suppress("DEPRECATION")
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        return displayMetrics.heightPixels.toFloat()
+    }
+
+    private fun getDisplayWidth(): Float {
+        @Suppress("DEPRECATION")
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        return displayMetrics.widthPixels.toFloat()
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
 
         when (event.actionMasked) {
@@ -167,6 +203,7 @@ class GameActivity : AppCompatActivity() {
             MotionEvent.ACTION_MOVE -> {
                 val xPositionChange = event.x - xPressedPosition
                 viewModel.changePlayerPlanePosition(xPositionChange.toInt())
+                xPressedPosition = event.x
             }
             MotionEvent.ACTION_UP -> {
                 xPressedPosition = 0f
