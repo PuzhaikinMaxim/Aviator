@@ -1,7 +1,7 @@
 package com.mxpj.aviator.domain
 
 sealed class Bullet(
-    val bulletId: Long,
+    val id: Long,
     val position: Pair<Int, Int>,
     val bulletType: BulletType,
     val isEnemyBullet: Boolean

@@ -11,6 +11,6 @@ data class EnemyPlane(
 
     companion object {
         private var ID = 0
-        const val SHOOT_DELAY = 1200L
+        const val SHOOT_DELAY = 2800L
     }
 }

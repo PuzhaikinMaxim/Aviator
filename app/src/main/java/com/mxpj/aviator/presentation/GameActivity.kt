@@ -1,9 +1,12 @@
 package com.mxpj.aviator.presentation
 
+import android.animation.Animator
+import android.animation.Animator.AnimatorListener
 import android.animation.ValueAnimator
 import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.os.Bundle
 import android.util.DisplayMetrics
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
@@ -24,6 +27,8 @@ class GameActivity : AppCompatActivity() {
     private val planeHolders = ArrayList<PlaneHolder>()
 
     private val bulletHolders = ArrayList<BulletHolder>()
+
+    private var xPressedPosition = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +58,27 @@ class GameActivity : AppCompatActivity() {
                     ivPlane.y = animatedValue
                 }
                 animator.addUpdateListener(updateListener)
+                val animatorListener = object : AnimatorListener {
+                    override fun onAnimationStart(p0: Animator) {
+
+                    }
+
+                    override fun onAnimationEnd(p0: Animator) {
+                        binding.clTest.removeView(ivPlane)
+                        viewModel.removeEnemyPlane(plane)
+                        planeHolders.removeIf { planeHolder -> planeHolder.plane.id == plane.id }
+                    }
+
+                    override fun onAnimationCancel(p0: Animator) {
+
+                    }
+
+                    override fun onAnimationRepeat(p0: Animator) {
+
+                    }
+
+                }
+                animator.addListener(animatorListener)
                 animator.start()
                 ivPlane.x = plane.position.first.toFloat()
                 ivPlane.y = plane.position.second.toFloat()
@@ -67,7 +93,7 @@ class GameActivity : AppCompatActivity() {
             val bulletCopy = it.clone() as ArrayList<Bullet>
             for(bullet in bulletCopy){
                 val bulletHolder = bulletHolders.find {
-                        bulletHolder -> bulletHolder.bullet.bulletId == bullet.bulletId
+                        bulletHolder -> bulletHolder.bullet.id == bullet.id
                 }
                 if(bulletHolder != null) continue
                 val ivBullet = ImageView(this)
@@ -103,9 +129,50 @@ class GameActivity : AppCompatActivity() {
                     val animatedValue = va.animatedValue as Float
                     ivBullet.y = animatedValue
                 }
+                val animatorListener = object : AnimatorListener {
+                    override fun onAnimationStart(p0: Animator) {
+
+                    }
+
+                    override fun onAnimationEnd(p0: Animator) {
+                        binding.clTest.removeView(ivBullet)
+                        bulletHolders.removeIf {
+                                bulletHolder -> bulletHolder.bullet.id == bullet.id
+                        }
+                        viewModel.removeBullet(bullet)
+                    }
+
+                    override fun onAnimationCancel(p0: Animator) {
+
+                    }
+
+                    override fun onAnimationRepeat(p0: Animator) {
+
+                    }
+
+                }
+                animator.addListener(animatorListener)
                 animator.addUpdateListener(updateListener)
                 animator.start()
             }
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                xPressedPosition = event.x
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val xPositionChange = event.x - xPressedPosition
+                viewModel.changePlayerPlanePosition(xPositionChange.toInt())
+            }
+            MotionEvent.ACTION_UP -> {
+                xPressedPosition = 0f
+            }
+        }
+
+        return true
     }
 }

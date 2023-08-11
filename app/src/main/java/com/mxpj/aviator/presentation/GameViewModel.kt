@@ -25,9 +25,9 @@ class GameViewModel: ViewModel() {
     val healthPack: LiveData<HealthPack>
         get() = _healthPack
 
-    private lateinit var planeSpawnJob: Job
+    private var planeSpawnJob: Job
 
-    private val _enemyLogic = HashMap<Int, Job>()
+    private val enemyLogic = HashMap<Int, Job>()
 
     init {
         val scope = CoroutineScope(Dispatchers.IO)
@@ -35,7 +35,7 @@ class GameViewModel: ViewModel() {
         _enemies.value = _enemies.value!!.apply {
             add(enemyPlane)
         }
-        _enemyLogic[enemyPlane.id] = scope.launch {
+        enemyLogic[enemyPlane.id] = scope.launch {
             while (true) {
                 delay(EnemyPlane.SHOOT_DELAY)
                 addEnemyBullet(enemyPlane.id)
@@ -47,7 +47,7 @@ class GameViewModel: ViewModel() {
                 delay(2000L)
                 val ep = EnemyPlane(position = Pair(Random.nextInt(0, 1000),-200))
                 _enemies.value!!.add(ep)
-                _enemyLogic[ep.id] = scope.launch {
+                enemyLogic[ep.id] = scope.launch {
                     while (true) {
                         delay(EnemyPlane.SHOOT_DELAY)
                         addEnemyBullet(ep.id)
@@ -77,5 +77,29 @@ class GameViewModel: ViewModel() {
             it
         }
         _enemies.value = _enemies.value
+    }
+
+    fun removeEnemyPlane(plane: EnemyPlane) {
+        val enemyJob = enemyLogic[plane.id]
+        enemyJob?.cancel()
+        enemyLogic.remove(plane.id)
+        _enemies.value!!.removeIf {
+            plane.id == it.id
+        }
+    }
+
+    fun removeBullet(bullet: Bullet) {
+        _bullets.value!!.removeIf {
+            bullet.id == it.id
+        }
+    }
+
+    fun changePlayerPlanePosition(translationX: Int) {
+        val position = _player.value!!.position
+        _player.value = _player.value!!.copy(
+            position = position.copy(
+                first = (position.first + translationX)
+            )
+        )
     }
 }
